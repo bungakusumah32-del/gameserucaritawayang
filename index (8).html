@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pasangan Wayang Golek Sunda</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;user-select:none}
+html,body{height:100%;background:#1b1233;overflow:hidden;font-family:"Segoe UI",system-ui,sans-serif}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1280px;height:720px;flex:none;transform-origin:center;position:relative;color:#fff;
+background:radial-gradient(circle at 20% 10%,#4b2a7a,#1b1233 70%);border-radius:24px;overflow:hidden}
+.top{display:flex;align-items:center;gap:14px;padding:16px 28px;height:84px}
+.top h1{font-size:28px;flex:1;color:#ffd166}
+.pill{background:#ffffff1f;border-radius:30px;padding:8px 18px;font-size:22px;font-weight:700;white-space:nowrap}
+.pill.combo{background:#ff6b35;display:none}
+button{font:inherit;cursor:pointer;border:0;border-radius:16px;padding:12px 24px;font-size:22px;font-weight:700;color:#1b1233;background:#ffd166;transition:.15s}
+button:hover{transform:scale(1.05)}
+button.sec{background:#ffffff2e;color:#fff}
+#info{text-align:center;font-size:24px;height:44px;line-height:44px;padding:0 20px}
+#info.bad{color:#ff8a8a}#info.good{color:#7dffb2}
+#board{display:flex;justify-content:space-between;padding:0 50px;height:490px;align-items:stretch}
+.col{width:540px;display:flex;flex-direction:column;justify-content:space-around;gap:10px}
+.card{flex:1;max-height:112px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 16px;
+border-radius:18px;font-size:23px;font-weight:600;line-height:1.2;border:4px solid transparent;cursor:pointer;transition:.15s}
+.L .card{background:#6c3fc9}.R .card{background:#0e8f8f}
+.card:hover{transform:scale(1.03)}
+.card.sel{border-color:#ffd166;box-shadow:0 0 22px #ffd166;transform:scale(1.05)}
+.card.shake{animation:sh .4s;border-color:#ff5c5c}
+.card.done{cursor:default;color:#12301f;transform:none;box-shadow:none}
+.card.over{border-color:#fff}
+@keyframes sh{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+.screen{position:absolute;inset:0;background:#1b1233f2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:50px;z-index:5}
+.screen h2{font-size:46px;color:#ffd166}
+.screen p{font-size:24px;max-width:900px;line-height:1.4}
+.lv{display:flex;gap:22px;margin-top:6px}
+.lv button{width:270px;padding:20px;font-size:26px;line-height:1.3}
+.lv small{display:block;font-size:17px;font-weight:500;margin-top:4px}
+label{font-size:22px;display:flex;gap:10px;align-items:center;cursor:pointer}
+input[type=checkbox]{width:24px;height:24px}
+.hide{display:none!important}
+.stars{font-size:56px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+<div class="top">
+  <h1>🎭 Pasangan Wayang Golek Sunda</h1>
+  <div class="pill" id="lvl">Level 1</div>
+  <div class="pill">⭐ <span id="score">0</span></div>
+  <div class="pill combo" id="combo">🔥 Combo x2</div>
+  <div class="pill" id="timer">⏱ 0:00</div>
+  <button class="sec" onclick="showMenu()">Menu</button>
+  <button onclick="startLevel(cur)">↻ Ulang</button>
+</div>
+<div id="info">Ketuk kartu kiri, lalu pasangannya di kanan (atau seret).</div>
+<div id="board"><div class="col L" id="colL"></div><div class="col R" id="colR"></div></div>
+
+<div class="screen" id="menu">
+  <h2>🎭 Pasangan Wayang Golek Sunda</h2>
+  <p><b>Cara bermain:</b> pasangkan kartu <b>ungu</b> (kiri) dengan kartu <b>hijau-biru</b> (kanan) yang berhubungan. Ketuk kedua kartu, atau seret kartu kiri ke kartu kanan. Pasangan benar berubah warna. Jawaban beruntun menambah <b>combo</b>!</p>
+  <div class="lv">
+    <button onclick="startLevel(0)">Level 1 · Mudah<small>Unsur intrinsik ↔ pengertian</small></button>
+    <button onclick="startLevel(1)">Level 2 · Sedang<small>Tokoh ↔ peran/ciri</small></button>
+    <button onclick="startLevel(2)">Level 3 · Tantangan<small>Mahabharata vs Ramayana</small></button>
+  </div>
+  <label><input type="checkbox" id="useTimer"> Aktifkan timer hitung mundur (opsional)</label>
+</div>
+
+<div class="screen hide" id="end">
+  <h2 id="endTitle">Selesai!</h2>
+  <div class="stars" id="stars"></div>
+  <p id="endText"></p>
+  <div class="lv" style="margin-top:0">
+    <button id="nextBtn" style="width:230px" onclick="startLevel(cur+1)">Level berikutnya ▶</button>
+    <button style="width:230px" onclick="startLevel(cur)">↻ Main lagi</button>
+    <button class="sec" style="width:230px" onclick="showMenu()">Menu</button>
+  </div>
+</div>
+
+</div></div>
+
+<script>
+const LEVELS=[
+ {name:"Level 1 · Mudah",time:90,pairs:[
+  ["Tema","Gagasan pokok yang mendasari seluruh cerita"],
+  ["Alur","Rangkaian peristiwa dari awal hingga akhir"],
+  ["Latar","Tempat, waktu, dan suasana terjadinya cerita"],
+  ["Tokoh","Pelaku yang berperan dalam cerita wayang"],
+  ["Amanat","Pesan moral yang ingin disampaikan dalang"],
+  ["Konflik","Pertentangan yang menggerakkan jalannya cerita"]]},
+ {name:"Level 2 · Sedang",time:100,pairs:[
+  ["Rama","Pangeran Ayodya, titisan Wisnu, suami Sinta"],
+  ["Hanoman","Kera putih utusan Rama yang membakar Alengka"],
+  ["Rahwana","Raja raksasa Alengka penculik Sinta"],
+  ["Bima","Pandawa bertubuh kuat dengan senjata gada"],
+  ["Arjuna","Pandawa ahli memanah, kesatria tampan"],
+  ["Cepot (Astrajingga)","Punakawan Sunda jenaka, putra Semar"],
+  ["Kresna","Penasihat Pandawa, kusir kereta Arjuna"],
+  ["Kumbakarna","Adik Rahwana yang gugur membela negerinya"]]},
+ {name:"Level 3 · Tantangan",time:130,pairs:[
+  ["Latar utama Ramayana","Ayodya dan Alengka"],
+  ["Latar utama Mahabharata","Hastinapura dan Kurusetra"],
+  ["Konflik Ramayana","Rama melawan Rahwana karena Sinta diculik"],
+  ["Konflik Mahabharata","Pandawa melawan Kurawa, saudara sepupu"],
+  ["Puncak alur Ramayana","Perang Alengka, Rahwana dikalahkan"],
+  ["Puncak alur Mahabharata","Perang Baratayuda di Kurusetra"],
+  ["Amanat Ramayana","Kebajikan, kesetiaan, dan kejujuran menang atas angkara murka"],
+  ["Amanat Mahabharata","Keserakahan dan perebutan kuasa menghancurkan semua pihak"]]}
+];
+const COLORS=["#ffd166","#7dffb2","#ff9ecb","#8ecbff","#ffb27a","#c9a7ff","#b8f26b","#ff8a8a"];
+const WRONG=["Belum cocok, coba lagi!","Hampir! Baca lagi kedua kartu.","Bukan pasangannya. Pikirkan unsur ceritanya.","Kurang tepat, coba kartu lain."];
+let cur=0,score=0,combo=0,matched=0,sel=null,locked=false,tick=null,secs=0,errors=0,total=0,countdown=false;
+const $=id=>document.getElementById(id);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);$("stage").style.transform="scale("+s+")"}
+addEventListener("resize",fit);fit();
+
+function showMenu(){clearInterval(tick);$("end").classList.add("hide");$("menu").classList.remove("hide")}
+function msg(t,c){const i=$("info");i.textContent=t;i.className=c||""}
+function fmt(s){return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+
+function startLevel(n){
+  if(n>=LEVELS.length)n=0;
+  cur=n;score=0;combo=0;matched=0;sel=null;errors=0;locked=false;
+  countdown=$("useTimer").checked;
+  const L=LEVELS[n];total=L.pairs.length;
+  $("menu").classList.add("hide");$("end").classList.add("hide");
+  $("lvl").textContent=L.name;$("score").textContent=0;$("combo").style.display="none";
+  msg("Ketuk kartu kiri, lalu pasangannya di kanan (atau seret).");
+  const colL=$("colL"),colR=$("colR");colL.innerHTML="";colR.innerHTML="";
+  const idx=L.pairs.map((_,i)=>i);
+  shuffle(idx).forEach(i=>colL.appendChild(mk(i,L.pairs[i][0],"L")));
+  shuffle(idx).forEach(i=>colR.appendChild(mk(i,L.pairs[i][1],"R")));
+  clearInterval(tick);secs=countdown?L.time:0;updTimer();
+  tick=setInterval(()=>{
+    if(countdown){secs--;if(secs<=0){secs=0;updTimer();finish(true);return}}else secs++;
+    updTimer()},1000);
+}
+function updTimer(){$("timer").textContent="⏱ "+fmt(secs)}
+
+function mk(i,text,side){
+  const d=document.createElement("div");d.className="card";d.textContent=text;d.dataset.i=i;d.dataset.s=side;
+  d.onclick=()=>pick(d);
+  if(side==="L"){
+    d.draggable=true;
+    d.ondragstart=e=>{if(d.classList.contains("done")){e.preventDefault();return}e.dataTransfer.setData("text/plain",i);setSel(d)};
+  }else{
+    d.ondragover=e=>{e.preventDefault();d.classList.add("over")};
+    d.ondragleave=()=>d.classList.remove("over");
+    d.ondrop=e=>{e.preventDefault();d.classList.remove("over");
+      const l=document.querySelector('#colL .card[data-i="'+e.dataTransfer.getData("text/plain")+'"]');
+      if(l&&!l.classList.contains("done")){setSel(l);pick(d)}};
+  }
+  return d;
+}
+function setSel(d){document.querySelectorAll(".card.sel").forEach(c=>c.classList.remove("sel"));d.classList.add("sel");sel=d}
+
+function pick(d){
+  if(locked||d.classList.contains("done"))return;
+  if(d.dataset.s==="L"){
+    if(sel===d){d.classList.remove("sel");sel=null;return}
+    setSel(d);msg("Sekarang pilih pasangannya di kolom kanan.");return}
+  if(!sel){msg("Pilih dulu kartu ungu di kiri.");return}
+  check(sel,d);
+}
+function check(l,r){
+  if(l.dataset.i===r.dataset.i){
+    const col=COLORS[matched%COLORS.length];matched++;combo++;
+    const gain=10+(combo>1?(combo-1)*5:0);score+=gain;
+    [l,r].forEach(c=>{c.classList.remove("sel");c.classList.add("done");c.style.background=col;c.draggable=false});
+    $("score").textContent=score;
+    if(combo>1){$("combo").style.display="block";$("combo").textContent="🔥 Combo x"+combo}
+    msg("Tepat! +"+gain+(combo>1?" (bonus combo)":""),"good");
+    sel=null;
+    if(matched===total)setTimeout(()=>finish(false),700);
+  }else{
+    combo=0;errors++;score=Math.max(0,score-2);$("score").textContent=score;$("combo").style.display="none";
+    msg(WRONG[Math.floor(Math.random()*WRONG.length)]+" (−2)","bad");
+    locked=true;l.classList.add("shake");r.classList.add("shake");
+    setTimeout(()=>{l.classList.remove("shake","sel");r.classList.remove("shake");sel=null;locked=false},450);
+  }
+}
+function finish(timeUp){
+  clearInterval(tick);
+  const ok=matched===total;
+  const pct=Math.max(0,1-errors/(total*1.5));
+  const st=!ok?0:(errors===0?3:(pct>0.6?2:1));
+  $("endTitle").textContent=ok?"Hebat! Level selesai 🎉":"Waktu habis ⏰";
+  $("stars").textContent=ok?"⭐".repeat(st)+"☆".repeat(3-st):"Pasangan benar: "+matched+" dari "+total;
+  $("endText").textContent="Skor: "+score+" · Kesalahan: "+errors+(ok?"":" · Coba lagi, kamu pasti bisa!");
+  $("nextBtn").classList.toggle("hide",!ok||cur>=LEVELS.length-1);
+  $("end").classList.remove("hide");
+}
+</script>
+</body>
+</html>
